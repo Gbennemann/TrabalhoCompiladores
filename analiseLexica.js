@@ -1,139 +1,154 @@
 const moo = require('moo');
+const chalk = require('chalk'); // Requer: npm install chalk
 
-// Definindo o analisador léxico
+// Lexer com tokens da linguagem
 const lexer = moo.compile({
-  IF: /if/,
+  // Palavras-chave
+  IF: /\bif\b/,
+  ELSE: /\belse\b/,
+  WHILE: /\bwhile\b/,
+  RETURN: /\breturn\b/,
+  FUNCTION: /\bfunction\b/,
+  VAR: /\bvar\b/,
+  CONST: /\bconst\b/,
+  LET: /\blet\b/,
+
+  // Literais
+  NUMBER: /\b\d+(?:\.\d+)?\b/,
+  STRING: /"(?:\\["\\]|[^\n"\\])*"/,
+
+  // Identificadores
   IDENTIFIER: /[a-zA-Z_][a-zA-Z0-9_]*/,
-  NUMBER: /\d+/,
-  EQUAL: /==/,
+
+  // Operadores
+  EQ: /==/,
   ASSIGN: /=/,
   PLUS: /\+/,
+  MINUS: /-/,
   TIMES: /\*/,
+  DIV: /\//,
+  MOD: /%/,
+  LT: /</,
+  GT: />/,
+
+  // Delimitadores
   LBRACE: /\{/,
   RBRACE: /\}/,
+  LPAREN: /\(/,
+  RPAREN: /\)/,
   SEMICOLON: /;/,
+  COMMA: /,/,
+
+  // Comentários (agora bem tratados)
+  COMMENT: { match: /\/\/.*/, lineBreaks: false },
+
+  // Espaços em branco (ignorados)
   WS: { match: /\s+/, lineBreaks: true },
 });
 
-// Função para gerar e exibir a tabela de transição
+// Tabela de transição (simulada para ilustração)
 function gerarTabelaDeTransicao() {
   const transicoes = {
-    'q0': { 'i': 'q1', 'x': 'q2', ' ': 'q3' }, // Estado inicial
-    'q1': { 'f': 'q4' }, // "if" token
-    'q2': { ' ': 'q5' }, // Identificador "x"
-    'q3': { ' ': 'q6' }, // Transições com espaços
-    'q4': { ' ': 'q7' }, // "if" finalizado
-    'q5': { ' ': 'q8' }, // Transições após o identificador
-    'q6': { '=': 'q9' }, // "=="
+    q0: { f: 'q1', v: 'q2', '/': 'q3', '=': 'q4', '"': 'q5', d: 'q6' },
+    q1: { u: 'q7' },
+    q2: { a: 'q8' },
+    q3: { '/': 'q9' },
+    q4: { '=': 'q10' },
+    q5: { '"': 'q11' },
+    q6: { '0-9': 'q6' },
   };
 
-  console.log("\nTabela de Transição:");
-  for (let estado in transicoes) {
-    console.log(`Estado: ${estado}`);
-    for (let transicao in transicoes[estado]) {
-      console.log(`  Leitura de '${transicao}' -> Transição para: ${transicoes[estado][transicao]}`);
+  console.log(chalk.blueBright.bold("\n📊 Tabela de Transição (simulada):"));
+  for (const [estado, trans] of Object.entries(transicoes)) {
+    console.log(chalk.yellow(`  Estado: ${estado}`));
+    for (const [char, destino] of Object.entries(trans)) {
+      console.log(`    '${char}' → ${chalk.green(destino)}`);
     }
   }
 }
 
-// Função para gerar e exibir o AFD (Autômato Finito Determinístico)
+// AFD (Autômato Finito Determinístico)
 function gerarAFD() {
   const AFD = {
-    'q0': ['q1', 'q2'], // Estado inicial
-    'q1': ['q4'], // Transição após 'i'
-    'q2': ['q5'], // Transição após 'x'
-    'q3': ['q6'], // Transições após espaço
-    'q4': ['q7'], // "if" token completo
-    'q5': ['q8'], // Transições após identificador
+    q0: ['q1', 'q2', 'q3', 'q4', 'q5', 'q6'],
+    q1: ['q7'],
+    q2: ['q8'],
+    q3: ['q9'],
+    q4: ['q10'],
   };
 
-  console.log("\nAutômato Finito Determinístico (AFD):");
-  for (let estado in AFD) {
-    console.log(`Estado: ${estado}`);
-    console.log(`  Transições: ${AFD[estado].join(', ')}`);
+  console.log(chalk.magentaBright.bold("\n🧠 AFD (Autômato Finito Determinístico):"));
+  for (const estado in AFD) {
+    console.log(`  ${chalk.yellow('Estado')}: ${estado} → ${chalk.green(AFD[estado].join(', '))}`);
   }
 }
 
-// Função para exibir os tokens encontrados durante a análise léxica
+// Exibe tokens encontrados
 function exibirTokens(tokens) {
-  console.log("\nTokens encontrados:");
-  tokens.forEach(token => {
-    console.log(`Tipo: ${token.type}, Valor: "${token.value}", Linha: ${token.line}`);
-  });
+  console.log(chalk.cyanBright.bold("\n📥 Tokens encontrados:"));
+  tokens.forEach(t =>
+    console.log(`${chalk.gray('•')} ${chalk.bold(t.type.padEnd(10))} | Valor: ${chalk.greenBright(`'${t.value}'`)} | Linha: ${chalk.yellow(t.line)}`)
+  );
 }
 
-// Função para exibir a tabela de símbolos
-function exibirTabelaDeSimbolos(symbols) {
-  console.log("\nTabela de Símbolos:");
-  console.log(symbols);
+// Exibe tabela de símbolos
+function exibirTabelaDeSimbolos(tokens) {
+  const simbolos = tokens.filter(t => t.type === 'IDENTIFIER').map(t => t.value);
+  const unicos = [...new Set(simbolos)];
+  console.log(chalk.blueBright.bold("\n📌 Tabela de Símbolos:"));
+  unicos.forEach(s => console.log(`${chalk.gray('-')} ${chalk.whiteBright(s)}`));
 }
 
-// Função para exibir o relatório de erros
-function exibirRelatorioDeErros(errors) {
-  console.log("\nRelatório de Erros:");
-  if (errors.length === 0) {
-    console.log("Nenhum erro encontrado.");
+// Relatório de erros
+function exibirRelatorioDeErros(erros) {
+  console.log(chalk.redBright.bold("\n❗ Relatório de Erros:"));
+  if (erros.length === 0) {
+    console.log(chalk.green("  Nenhum erro encontrado."));
   } else {
-    errors.forEach(error => {
-      console.log(`Erro na linha ${error.line}: ${error.message}`);
+    erros.forEach(e => {
+      console.log(`  ${chalk.red('Erro')} na linha ${chalk.yellow(e.line)}: ${e.message}`);
     });
   }
 }
 
-// Função para analisar o código fonte
+// Lógica principal de análise
 function analisarCodigo(codigo) {
   const tokens = [];
   const erros = [];
-  const symbols = new Set(); // Usando Set para armazenar os símbolos (sem repetição)
+  lexer.reset(codigo);
 
-  let linha = 1;
-  let lexema = '';
-
-  for (let char of codigo) {
-    // Processar o código linha por linha, com base nas expressões regulares definidas
-    lexer.reset(char);
-    const token = lexer.next();
-
-    if (token) {
-      tokens.push(token);
-      symbols.add(token.value); // Adicionando à tabela de símbolos
-    } else {
-      erros.push({ line: linha, message: `Erro: Lexema inválido encontrado: ${char}` });
+  try {
+    let token;
+    while ((token = lexer.next())) {
+      if (token.type !== 'WS' && token.type !== 'COMMENT') {
+        tokens.push(token);
+      }
     }
-    if (char === '\n') linha++;
+  } catch (e) {
+    erros.push({ line: e.line || '?', message: e.message });
   }
 
   exibirTokens(tokens);
-  exibirTabelaDeSimbolos([...symbols]);
+  exibirTabelaDeSimbolos(tokens);
   exibirRelatorioDeErros(erros);
 }
 
-// Função para ler o código a ser analisado
+// Leitura do código
 function getInput() {
   const readline = require('readline');
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-  });
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
-  let codigoCompleto = ''; // Variável para acumular o código
-
-  console.log("Digite o código a ser analisado (Digite 'FIM' para finalizar):");
+  let codigoCompleto = '';
+  console.log(chalk.bold("✍️  Digite o código a ser analisado (digite 'FIM' para encerrar):"));
 
   rl.on('line', (input) => {
-    if (input === 'FIM') {
+    if (input.trim() === 'FIM') {
       rl.close();
-      
-      // Gerar e exibir a tabela de transição e o AFD
       gerarTabelaDeTransicao();
       gerarAFD();
-      
-      // Analisar o código
       analisarCodigo(codigoCompleto);
       return;
     }
-
-    // Adiciona a linha do código à variável
     codigoCompleto += input + '\n';
   });
 }
