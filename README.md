@@ -11,6 +11,18 @@ Este projeto implementa um **analisador léxico** simples para análise de códi
 - **Tabela de símbolos**: Exibe os símbolos identificados durante a análise léxica.
 - **Relatório de erros**: Caso algum erro seja encontrado durante a análise, um relatório é gerado.
 
+## 🧠 Tokens Reconhecidos
+
+| Categoria       | Exemplos / Regex                     | Descrição                                     |
+|----------------|--------------------------------------|-----------------------------------------------|
+| Palavras-chave | `if`                                 | Condicional simples reconhecido diretamente   |
+| Identificadores| `[a-zA-Z_][a-zA-Z0-9_]*`              | Variáveis como `x`, `valor`, `nome_id`        |
+| Operadores     | `==`, `=`, `+`, `*`                   | Comparação, atribuição, soma, multiplicação   |
+| Delimitadores  | `{`, `}`, `;`                         | Blocos e separação de instruções              |
+| Constantes     | `\d+`                                 | Números inteiros como `10`, `42`, `0`         |
+| Comentários    | _Não implementado_                    | O suporte a comentários ainda não existe      |
+
+
 ## Como usar
 
 ### 1. Instalar as dependências
